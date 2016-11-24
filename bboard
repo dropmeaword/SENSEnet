@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+"""
+SENSEnet:BalanceBoard serial gateway reads data from Wobble and pumps it to the network.
+
+Usage:
+  bboard <serial> <bitrate> --id=<identifier> [--host=<ip>] [--port=<port>]
+  bboard -h | --help
+
+  Reads a signal from a serial interface and outputs two streams, one LSL and one OSC stream.
+
+Options:
+  -h --help              show this help text
+  --id=<identifier>      ID of sensor in the network
+  --host=<host>          hostname or IP of OSC listener [default: 127.0.0.1]
+  --port=<port>          port of OSC listener
+"""
+from docopt import docopt
+import os, sys
+import time
+import traceback
+import glob
+import serial
+import random
+import logging
+
+from nodes import *
+from nodes import filters
+from nodes.controller.balanceboard import *
+
+from string import *
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)-15s %(message)s")
+
+    print "SENSEnet:bboard serial gateway"
+    print "(cc) 2015 Luis Rodil-Fernandez <root@derfunke.net>"
+    print
+
+    arguments = docopt(__doc__)
+
+    # get destination host
+    host = '127.0.0.1'
+    if ('--host' in arguments) and (arguments['--host']):
+        host = arguments['--host']
+
+    # get destination port
+    port = 12345
+    if ('--port' in arguments) and (arguments['--port']):
+        port = int(arguments['--port'])
+
+    # get source serial
+    serdev = None
+    if ('<serial>' in arguments) and (arguments['<serial>']):
+        serdev = arguments['<serial>']
+    else:
+        print "Serial source not specified, trying to autodetect..."
+        ards = find_arduinos()
+        if len(ards) == 0:
+            print "(!!!) Couldn't find any serial gateway. Please plug one to continue."
+            sys.exit(2)
+
+        serdev = ards[0]  # get first serial device found
+
+    bitrate = 57600
+    if ('<bitrate>' in arguments) and (arguments['<bitrate>']):
+        bitrate = arguments['<bitrate>']
+
+    sid = None
+    if ('--id' in arguments) and (arguments['--id']):
+        sid = arguments['--id']
+
+    # configure our interface and all inlets/outlets
+    bboard = BalanceBoard(sid)
+
+    # configure the serial input of the balanceboard
+    bboard.append_inlet(
+        BalanceBoardSerialIn(bboard, serdev, bitrate)
+    )
+
+    # configure a rate-limitted OSC output for Unity
+    #
+    # @NOTE Unity seems to choke if the OSC message rate is
+    # much higher than the framerate, so we need to rate-limit the
+    # outlet that we point to Unity
+    bboard.append_outlet(
+        filters.RateLimiter(
+            bboard, BalanceBoardOscOut(bboard, host, port),
+            20   # limit to NN packets per second
+        )
+    )
+
+    # get secondary OSC output for instrument (on a fixed IP and port)
+    bboard.append_outlet(
+        BalanceBoardOscOut(bboard, "127.0.0.1", 5858)
+    )
+
+    # configure LSL output
+    bboard.append_outlet(
+        BalanceBoardLSLOut(bboard, datarate=250)
+    )
+
+    try:
+        while True:
+            bboard.update()
+    except KeyboardInterrupt as e:
+        print "Looks like you wanna leave. Good bye!"
+    finally:
+        pass
+        #gw.stop()
+        #gw.close()

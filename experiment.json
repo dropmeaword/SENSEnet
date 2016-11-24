@@ -1,0 +1,19 @@
+{
+	"controllers": [{
+		"id": "CTRL01",
+		"type": "proto.BalanceBoard",
+
+		"inlets": [{
+			"serial": "/dev/tty.USB0"
+		}],
+
+		"outlets": [{
+			"OSC": {
+				"host": "127.0.0.1",
+				"port": 12345,
+				"base_address": "/controller/CTRL01"
+			}
+		}]
+
+	}]
+}

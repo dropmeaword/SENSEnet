@@ -1,0 +1,7 @@
+#!/bin/sh
+
+
+HOST="127.0.0.1"
+
+
+./bboard /dev/tty.usbserial-DN00OJUP 57600 --id=bboard01 --host=$HOST  --port=6665
