@@ -4,7 +4,13 @@
 		"type": "proto.BalanceBoard",
 
 		"inlets": [{
-			"serial": "/dev/tty.USB0"
+			"serial": {
+				"port" : "/dev/tty.USB0",
+				"data_rate" : 57600,
+				"separator" : " ",
+				"request_sample_char" : "r",
+				"line_format" : "seq millis micros accx accy accz gyrox gyroy gyroz yaw pitch roll"
+			}
 		}],
 
 		"outlets": [{
@@ -12,7 +18,17 @@
 				"host": "127.0.0.1",
 				"port": 12345,
 				"base_address": "/controller/CTRL01"
-			}
+			},
+			"RateLimiter" : {
+					"max_packets_per_sec" : 50,
+					"outlet" : {
+						"OSC" : {
+							"host": "192.168.0.200",
+							"port": 5858,
+							"base_address": "/node/bboard01"
+						}
+					}
+				}
 		}]
 
 	}]
