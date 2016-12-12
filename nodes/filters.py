@@ -13,24 +13,24 @@ class LowPass(Inlet):
 
         see: https://theccontinuum.com/2012/09/24/arduino-imu-pitch-roll-from-accelerometer/
     """
-    def __init__(self, root, forwardto, k=.25):
+    def __init__(self, root, forwardto, k=.025):
         super(LowPass, self).__init__(root, "LowPass({0})".format(k))
         logging.debug("Setting low-pass on inlet with smoothing factor = {0}".format(k) )
         self.k = k
-        self.forward = forwardto
+        self.forwardto = forwardto
         self.lastreading = []
 
     def work(self, data):
         # make sure lastdata always contains at least one complete sample
-        if len(self.lastdata) == 0:
-            self.lastdata = data
+        if len(self.lastreading) == 0:
+            self.lastreading = data
 
         idx = 0
         for r in data:  #
-            self.lastdata[idx] = data[idx] * self.k + (self.lastdata[idx] * (1.0 - self.k))
+            self.lastreading[idx] = data[idx] * self.k + (self.lastreading[idx] * (1.0 - self.k))
 
         # forward to node
-        self.forwardto.work(self.lastdata)
+        self.forwardto.work(self.lastreading)
 
 class RateLimiter(Outlet):
     """
