@@ -21,10 +21,15 @@ class LowPass(Inlet):
         self.lastreading = []
 
     def work(self, data):
+        # make sure lastdata always contains at least one complete sample
+        if len(self.lastdata) == 0:
+            self.lastdata = data
+
         idx = 0
-        for r in data:
+        for r in data:  #
             self.lastdata[idx] = data[idx] * self.k + (self.lastdata[idx] * (1.0 - self.k))
 
+        # forward to node
         self.forwardto.work(self.lastdata)
 
 class RateLimiter(Outlet):
