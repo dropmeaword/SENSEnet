@@ -1,1 +1,1 @@
-- [ ] create a smoothing function to be applied on any outlet.
+  - [ ] create a smoothing function to be applied on any outlet.
